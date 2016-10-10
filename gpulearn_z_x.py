@@ -21,10 +21,10 @@ def main(n_z, n_hidden, dataset, seed, comment, gfx=True):
     import time
     logdir = 'results/gpulearn_z_x_'+dataset+'_'+str(n_z)+'-'+str(n_hidden)+'_'+comment+'_'+str(int(time.time()))+'/'
     if not os.path.exists(logdir): os.makedirs(logdir)
-    print 'logdir:', logdir
-    print 'gpulearn_z_x', n_z, n_hidden, dataset, seed
+    print('logdir:', logdir)
+    print('gpulearn_z_x', n_z, n_hidden, dataset, seed)
     with open(logdir+'hook.txt', 'a') as f:
-        print >>f, 'learn_z_x', n_z, n_hidden, dataset, seed
+        print('learn_z_x', n_z, n_hidden, dataset, seed, file=f)
     
     np.random.seed(seed)
 
@@ -229,10 +229,10 @@ def main(n_z, n_hidden, dataset, seed, comment, gfx=True):
         x = {'x': np.hstack((train_x, extra_x)), 'y':np.hstack((train_y, extra_y))}
         ndict.shuffleCols(x)
         
-        print 'Performing PCA, can take a few minutes... ',
+        print('Performing PCA, can take a few minutes... ', end=' ')
         f_enc, f_dec, pca_params = pp.PCA(x['x'][:,:10000], cutoff=600, toFloat=True)
         ndict.savez(pca_params, logdir+'pca_params')
-        print 'Done.'
+        print('Done.')
         
         n_y = 10
         x = {'x': f_enc(x['x']).astype(np.float32)}
@@ -290,14 +290,14 @@ def main(n_z, n_hidden, dataset, seed, comment, gfx=True):
             ll_valid_stats[1] += 1
             # Stop when not improving validation set performance in 100 iterations
             if ll_valid_stats[1] > 1000:
-                print "Finished"
+                print("Finished")
                 with open(logdir+'hook.txt', 'a') as f:
-                    print >>f, "Finished"
+                    print("Finished", file=f)
                 exit()
         
-        print epoch, t, ll, ll_valid, ll_valid_stats
+        print(epoch, t, ll, ll_valid, ll_valid_stats)
         with open(logdir+'hook.txt', 'a') as f:
-            print >>f, epoch, t, ll, ll_valid, ll_valid_stats
+            print(epoch, t, ll, ll_valid, ll_valid_stats, file=f)
 
         # Graphics
         if gfx and epoch%gfx_freq == 0:
@@ -374,21 +374,21 @@ def main(n_z, n_hidden, dataset, seed, comment, gfx=True):
 def loop_va(doEpoch, hook, n_epochs=9999999):
     
     t0 = time.time()
-    for t in xrange(1, n_epochs):
+    for t in range(1, n_epochs):
         L = doEpoch()
         hook(t, time.time() - t0, L)
         
-    print 'Optimization loop finished'
+    print('Optimization loop finished')
 
 # Learning step for variational auto-encoder
 def epoch_vae_adam(model, x, n_batch=100, convertImgs=False, bernoulli_x=False, byteToFloat=False):
-    print 'Variational Auto-Encoder', n_batch
+    print('Variational Auto-Encoder', n_batch)
     
     def doEpoch():
         
         from collections import OrderedDict
 
-        n_tot = x.itervalues().next().shape[1]
+        n_tot = iter(x.values()).next().shape[1]
         idx_from = 0
         L = 0
         while idx_from < n_tot:
@@ -410,7 +410,7 @@ def epoch_vae_adam(model, x, n_batch=100, convertImgs=False, bernoulli_x=False, 
 
 
 def get_adam_optimizer(learning_rate=0.001, decay1=0.1, decay2=0.001, weight_decay=0.0):
-    print 'AdaM', learning_rate, decay1, decay2, weight_decay
+    print('AdaM', learning_rate, decay1, decay2, weight_decay)
     def shared32(x, name=None, borrow=False):
         return theano.shared(np.asarray(x, dtype='float32'), name=name, borrow=borrow)
 

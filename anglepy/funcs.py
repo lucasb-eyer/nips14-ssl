@@ -8,9 +8,9 @@ class FuncLikelihood():
 		self.x = x
 		self.model = model
 		self.n_batch = n_batch
-		self.n_datapoints = x.itervalues().next().shape[1]
+		self.n_datapoints = iter(x.values()).next().shape[1]
 		if self.n_datapoints%(self.n_batch) != 0:
-			print self.n_datapoints, self.n_batch
+			print(self.n_datapoints, self.n_batch)
 			raise BaseException()
 		self.blocksize = self.n_batch
 		self.n_minibatches = self.n_datapoints/self.blocksize
@@ -84,8 +84,8 @@ class FuncLikelihoodPar():
 		self.n_batch = n_batch
 		self.clustersize = len(c)
 		
-		print 'ipcluster size = '+str(self.clustersize)
-		n_train = x.itervalues().next().shape[1]
+		print('ipcluster size = '+str(self.clustersize))
+		n_train = iter(x.values()).next().shape[1]
 		if n_train%(self.n_batch*len(c)) != 0: raise BaseException()
 		self.blocksize = self.n_batch*len(c)
 		self.n_minibatches = n_train/self.blocksize
@@ -207,7 +207,7 @@ class FuncLikelihoodMC():
 		self.x = x
 		self.model = model
 		self.n_mc_samples = n_mc_samples
-		self.n_minibatches = x.itervalues().next().shape[1]
+		self.n_minibatches = iter(x.values()).next().shape[1]
 	
 	def subval(self, i, w):
 		_x = ndict.getCols(self.x, i, i+1)

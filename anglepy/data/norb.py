@@ -2,7 +2,7 @@ import numpy as np
 import scipy.io
 import os
 import gzip
-import cPickle
+import pickle
 
 path = os.environ['ML_DATA_PATH']+'/norb/'
 
@@ -11,7 +11,7 @@ path = os.environ['ML_DATA_PATH']+'/norb/'
 def load_resized(size=24, binarize_y=False):
     # resized NORB dataset
     f = gzip.open(path+'norb_'+str(size)+'.pkl.gz', 'rb')
-    train, valid = cPickle.load(f)
+    train, valid = pickle.load(f)
     f.close()
     train_x, train_y = train
     valid_x, valid_y = valid
@@ -85,8 +85,8 @@ def save_reshaped(shape):
     test = reshape_digits(test_x, shape), test_y
     
     f = gzip.open(path+'norb_'+str(shape[0])+'.pkl.gz','wb')
-    import cPickle
-    cPickle.dump((train, test), f)
+    import pickle
+    pickle.dump((train, test), f)
     f.close()
 
     

@@ -52,17 +52,17 @@ def get_predictions(n_samples=1000, show_convergence=True):
             posterior = get_posterior(px / (i+1), prior_y)
             pred = np.argmax(posterior, axis=0)
             error_perc = 100* (pred != test_y).sum() / (1.*test_y.shape[0])
-            print 'samples:', i, ', test-set error (%):', error_perc
+            print('samples:', i, ', test-set error (%):', error_perc)
     posterior = get_posterior(px / n_samples, prior_y)
     return np.argmax(posterior, axis=0)
 
 n_samples = 1000
-print 'Computing class posteriors using a marginal likelihood estimate with importance sampling using ', n_samples, ' samples.'
-print 'This is slow, but could be sped up significantly by fitting a classifier to match the posteriors (of the generative model) in the training set.'
-print 'For MNIST, this should converge to ~ 0.96 % error.'
+print('Computing class posteriors using a marginal likelihood estimate with importance sampling using ', n_samples, ' samples.')
+print('This is slow, but could be sped up significantly by fitting a classifier to match the posteriors (of the generative model) in the training set.')
+print('For MNIST, this should converge to ~ 0.96 % error.')
 result = get_predictions(n_samples)
-print 'Done.'
-print 'Result (test-set error %): ', result
+print('Done.')
+print('Result (test-set error %): ', result)
 
 '''
 # Compare predictions with truth

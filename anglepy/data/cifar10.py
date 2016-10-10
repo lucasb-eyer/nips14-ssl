@@ -17,9 +17,9 @@ def load_numpy():
 	return train_x, train_y, test_x, test_y
 
 def unpickle(file):
-	import cPickle
+	import pickle
 	fo = open(file, 'rb')
-	dict = cPickle.load(fo)
+	dict = pickle.load(fo)
 	fo.close()
 	return dict
 

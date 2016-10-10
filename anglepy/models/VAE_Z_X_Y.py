@@ -67,7 +67,7 @@ class VAE_Z_X_Y(ap.VAEModel):
         
         # function for distribution q(z|x)
         theanofunc = lazytheanofunc('ignore', mode='FAST_RUN')
-        self.dist_qz['z'] = theanofunc([x['x']] + v.values() + [A], [q_mean, q_logvar])
+        self.dist_qz['z'] = theanofunc([x['x']] + list(v.values()) + [A], [q_mean, q_logvar])
         
         # Compute virtual sample
         _z = q_mean + T.exp(0.5 * q_logvar) * z['eps']
@@ -80,14 +80,14 @@ class VAE_Z_X_Y(ap.VAEModel):
         if self.type_px == 'bernoulli':
             px = T.nnet.sigmoid(T.dot(w['out_w'], hidden_p[-1]) + T.dot(w['out_b'], A))
             _logpx = - T.nnet.binary_crossentropy(px, x['x'])
-            self.dist_px['x'] = theanofunc([_z] + w.values() + [A], px)
+            self.dist_px['x'] = theanofunc([_z] + list(w.values()) + [A], px)
         elif self.type_px == 'gaussian'or self.type_px == 'sigmoidgaussian':
             x_mean = T.dot(w['out_w'], hidden_p[-1]) + T.dot(w['out_b'], A)
             if self.type_px == 'sigmoidgaussian':
                 x_mean = T.nnet.sigmoid(x_mean)
             x_logvar = T.dot(w['out_logvar_w'], hidden_p[-1]) + T.dot(w['out_logvar_b'], A)
             _logpx = ap.logpdfs.normal2(x['x'], x_mean, x_logvar)
-            self.dist_px['x'] = theanofunc([_z] + w.values() + [A], [x_mean, x_logvar])
+            self.dist_px['x'] = theanofunc([_z] + list(w.values()) + [A], [x_mean, x_logvar])
         else: raise Exception("")
         
         # Note: logpx is a row vector (one element per sample)
@@ -97,7 +97,7 @@ class VAE_Z_X_Y(ap.VAEModel):
         _logpy = T.dot(w['out_w_y'], hidden_q[-1]) + T.dot(w['out_b_y'], A)
         py = T.nnet.softmax(_logpy.T).T
         logpy = (- T.nnet.categorical_crossentropy(py.T, x['y'].T).T).reshape((1,-1))
-        self.dist_px['y'] = theanofunc([x['x']] + v.values() + w.values() + [A], py)
+        self.dist_px['y'] = theanofunc([x['x']] + list(v.values()) + list(w.values()) + [A], py)
         
         # log p(z) (prior of z)
         if self.type_pz == 'gaussianmarg':
@@ -142,8 +142,8 @@ class VAE_Z_X_Y(ap.VAEModel):
         
         # Custom grad, for when only 'x' is given (and not 'y')
         theanofunction = lazytheanofunc('warn', mode='FAST_RUN')
-        dL2_dw = T.grad((logpx + logpz - logqz).sum(), v.values() + w.values(), disconnected_inputs = 'ignore')
-        allvars = self.var_v.values() + self.var_w.values() + [x['x']] + z.values() + [A]
+        dL2_dw = T.grad((logpx + logpz - logqz).sum(), list(v.values()) + list(w.values()), disconnected_inputs = 'ignore')
+        allvars = list(self.var_v.values()) + list(self.var_w.values()) + [x['x']] + list(z.values()) + [A]
         self.f_dL2_dw = theanofunction(allvars, [logpx, logpz, logqz] + dL2_dw)
         
         return logpv, logpw, logpx+logpy, logpz, logqz
@@ -154,9 +154,9 @@ class VAE_Z_X_Y(ap.VAEModel):
         x, z = self.xz_to_theano(x, z)
         v, w, z, x = ndict.ordereddicts((v, w, z, x))
         A = self.get_A(x)
-        allvars = v.values() + w.values() + x.values() + z.values() + [A]
+        allvars = list(v.values()) + list(w.values()) + list(x.values()) + list(z.values()) + [A]
         r = self.f_dL2_dw(*allvars)
-        logpx, logpz, logqz, gv, gw = r[0], r[1], r[2], dict(zip(v.keys(), r[3:3+len(v)])), dict(zip(w.keys(), r[3+len(v):3+len(v)+len(w)]))
+        logpx, logpz, logqz, gv, gw = r[0], r[1], r[2], dict(list(zip(list(v.keys()), r[3:3+len(v)]))), dict(list(zip(list(w.keys()), r[3+len(v):3+len(v)+len(w)])))
         self.checknan(v, w, gv, gw)        
         gv, gw = self.gw_to_numpy(gv, gw)
         return logpx, logpz, logqz, gv, gw
@@ -177,20 +177,20 @@ class VAE_Z_X_Y(ap.VAEModel):
         _z = {}
 
         # If x['x'] was given but not z['z']: generate z ~ q(z|x)
-        if x.has_key('x') and not z.has_key('z'):
+        if 'x' in x and 'z' not in z:
 
-            q_mean, q_logvar = self.dist_qz['z'](*([x['x']] + v.values() + [A]))
+            q_mean, q_logvar = self.dist_qz['z'](*([x['x']] + list(v.values()) + [A]))
             _z['mean'] = q_mean
             _z['logvar'] = q_logvar
             
             # Require epsilon
-            if not z.has_key('eps'):
+            if 'eps' not in z:
                 z['eps'] = self.gen_eps(n_batch)['eps']
             
             z['z'] = q_mean + np.exp(0.5 * q_logvar) * z['eps']
             
         else:
-            if not z.has_key('z'):
+            if 'z' not in z:
                 if self.type_pz in ['gaussian','gaussianmarg']:
                     z['z'] = np.random.standard_normal(size=(self.n_z, n_batch))
                 elif self.type_pz == 'laplace':
@@ -201,14 +201,14 @@ class VAE_Z_X_Y(ap.VAEModel):
         # Generate from p(x|z)
         
         if self.type_px == 'bernoulli':
-            p = self.dist_px['x'](*([z['z']] + w.values() + [A]))
+            p = self.dist_px['x'](*([z['z']] + list(w.values()) + [A]))
             _z['x'] = p
-            if not x.has_key('x'):
+            if 'x' not in x:
                 x['x'] = np.random.binomial(n=1,p=p)
         elif self.type_px == 'sigmoidgaussian' or self.type_px == 'gaussian':
-            x_mean, x_logvar = self.dist_px['x'](*([z['z']] + w.values() + [A]))
+            x_mean, x_logvar = self.dist_px['x'](*([z['z']] + list(w.values()) + [A]))
             _z['x'] = x_mean
-            if not x.has_key('x'):
+            if 'x' not in x:
                 x['x'] = np.random.normal(x_mean, np.exp(x_logvar/2))
                 if self.type_px == 'sigmoidgaussian':
                     x['x'] = np.maximum(np.zeros(x['x'].shape), x['x'])
@@ -216,8 +216,8 @@ class VAE_Z_X_Y(ap.VAEModel):
         
         else: raise Exception("")
         
-        if not x.has_key('y'):
-            py = self.dist_px['y'](*([x['x']] + v.values() + w.values() + [A]))
+        if 'y' not in x:
+            py = self.dist_px['y'](*([x['x']] + list(v.values()) + list(w.values()) + [A]))
             _z['y'] = py
             x['y'] = np.zeros(py.shape)
             # np.random.multinomial requires loop. Faster possible?

@@ -2,7 +2,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 import math
-import misc
+from . import misc
 
 # library with theano PDF functions
 

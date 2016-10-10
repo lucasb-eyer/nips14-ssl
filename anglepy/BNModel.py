@@ -25,8 +25,8 @@ class BNModel(object):
         self.var_A = A
         
         # Get gradient symbols
-        self.allvars = w.values()  + x.values() + z.values() + [A] # note: '+' concatenates lists
-        self.allvars_keys = w.keys() + x.keys() + z.keys() + ['A']
+        self.allvars = list(w.values())  + list(x.values()) + list(z.values()) + [A] # note: '+' concatenates lists
+        self.allvars_keys = list(w.keys()) + list(x.keys()) + list(z.keys()) + ['A']
         
         if False:
             # Put test values
@@ -52,32 +52,32 @@ class BNModel(object):
         logpxz = logpx.sum() + logpz.sum()
         self.f_logpxz = theanofunction(self.allvars, [logpx, logpz])
         
-        dlogpxz_dwz = T.grad(logpxz, w.values() + z.values())
+        dlogpxz_dwz = T.grad(logpxz, list(w.values()) + list(z.values()))
         self.f_dlogpxz_dwz = theanofunction(self.allvars, [logpx, logpz] + dlogpxz_dwz)
         #self.f_dlogpxz_dw = theanofunction(allvars, [logpxz] + dlogpxz_dw)
         #self.f_dlogpxz_dz = theanofunction(allvars, [logpxz] + dlogpxz_dz)
         
         # prior
-        dlogpw_dw = T.grad(logpw, w.values(), disconnected_inputs='ignore')
-        self.f_logpw = theanofunction(w.values(), logpw)
-        self.f_dlogpw_dw = theanofunction(w.values(), [logpw] + dlogpw_dw)
+        dlogpw_dw = T.grad(logpw, list(w.values()), disconnected_inputs='ignore')
+        self.f_logpw = theanofunction(list(w.values()), logpw)
+        self.f_dlogpw_dw = theanofunction(list(w.values()), [logpw] + dlogpw_dw)
         
         if False:
             # MC-LIKELIHOOD
             logpx_max = logpx.max()
             logpxmc = T.log(T.exp(logpx - logpx_max).mean()) + logpx_max
             self.f_logpxmc = theanofunction(self.allvars, logpxmc)
-            dlogpxmc_dw = T.grad(logpxmc, w.values(), disconnected_inputs=theano_warning)
+            dlogpxmc_dw = T.grad(logpxmc, list(w.values()), disconnected_inputs=theano_warning)
             self.f_dlogpxmc_dw = theanofunction(self.allvars, [logpxmc] + dlogpxmc_dw)
         
         if True and len(z) > 0:
             # Fisher divergence (FD)
-            gz = T.grad(logpxz, z.values())
+            gz = T.grad(logpxz, list(z.values()))
             gz2 = [T.dmatrix() for _ in gz]
             fd = 0
             for i in range(len(gz)):
                 fd += T.sum((gz[i]-gz2[i])**2)
-            dfd_dw = T.grad(fd, w.values())
+            dfd_dw = T.grad(fd, list(w.values()))
             self.f_dfd_dw = theanofunction(self.allvars + gz2, [logpx, logpz, fd] + dfd_dw)
             
         if False and hessian:
@@ -106,18 +106,18 @@ class BNModel(object):
     def gwgz_to_numpy(self, gw, gz): return gw, gz
     
     # A = np.ones((1, n_batch))
-    def get_A(self, x): return np.ones((1, x.itervalues().next().shape[1]))
+    def get_A(self, x): return np.ones((1, iter(x.values()).next().shape[1]))
         
     # Likelihood: logp(x,z|w)
     def logpxz(self, w, x, z):
         x, z = self.xz_to_theano(x, z)
         w, z, x = ndict.ordereddicts((w, z, x))
         A = self.get_A(x)
-        allvars = w.values() + x.values() + z.values() + [A]
+        allvars = list(w.values()) + list(x.values()) + list(z.values()) + [A]
         logpx, logpz = self.f_logpxz(*allvars)
         if np.isnan(logpx).any() or np.isnan(logpz).any():
-            print 'v: ', logpx, logpz
-            print 'Values:'
+            print('v: ', logpx, logpz)
+            print('Values:')
             ndict.p(w)
             ndict.p(z)
             raise Exception("dlogpxz_dwz(): NaN found in gradients")
@@ -130,33 +130,33 @@ class BNModel(object):
         x, z = self.xz_to_theano(x, z)
         w, z, x = ndict.ordereddicts((w, z, x))
         A = self.get_A(x)
-        allvars = w.values() + x.values() + z.values() + [A]
+        allvars = list(w.values()) + list(x.values()) + list(z.values()) + [A]
         
         # Check if keys are correct
-        keys = w.keys() + x.keys() + z.keys() + ['A']
+        keys = list(w.keys()) + list(x.keys()) + list(z.keys()) + ['A']
         for i in range(len(keys)):
             if keys[i] != self.allvars_keys[i]:
                 "Input values are incorrect!"
-                print 'Input:', keys
-                print 'Should be:', self.allvars_keys
+                print('Input:', keys)
+                print('Should be:', self.allvars_keys)
                 raise Exception()
             
         r = self.f_dlogpxz_dwz(*allvars)
-        logpx, logpz, gw, gz = r[0], r[1], dict(zip(w.keys(), r[2:2+len(w)])), dict(zip(z.keys(), r[2+len(w):]))
+        logpx, logpz, gw, gz = r[0], r[1], dict(list(zip(list(w.keys()), r[2:2+len(w)]))), dict(list(zip(list(z.keys()), r[2+len(w):])))
         
         if ndict.hasNaN(gw) or ndict.hasNaN(gz):
             if True:
-                print 'NaN detected in gradients'
+                print('NaN detected in gradients')
                 raise Exception()
                 for i in gw: gw[i][np.isnan(gw[i])] = 0
                 for i in gz: gz[i][np.isnan(gz[i])] = 0
             else:
-                print 'logpx: ', logpx
-                print 'logpz: ', logpz
-                print 'Values:'
+                print('logpx: ', logpx)
+                print('logpz: ', logpz)
+                print('Values:')
                 ndict.p(w)
                 ndict.p(z)
-                print 'Gradients:'
+                print('Gradients:')
                 ndict.p(gw)
                 ndict.p(gz)
                 raise Exception("dlogpxz_dwz(): NaN found in gradients")
@@ -192,8 +192,8 @@ class BNModel(object):
     # Gradient of the prior: logp(w)
     def dlogpw_dw(self, w):
         w = ndict.ordered(w)
-        r = self.f_dlogpw_dw(*(w.values()))
-        return r[0], dict(zip(w.keys(), r[1:]))
+        r = self.f_dlogpw_dw(*(list(w.values())))
+        return r[0], dict(list(zip(list(w.keys()), r[1:])))
     
     # MC likelihood: logp(x|w)
     def logpxmc(self, w, x, n_batch):
@@ -211,28 +211,28 @@ class BNModel(object):
         x, z = self.xz_to_theano(x, z)
         A = self.get_A(x)
         r = self.f_dlogpxmc_dw(*ndict.orderedvals((w, x, z))+[A])
-        return r[0], dict(zip(ndict.ordered(w).keys(), r[1:]))
+        return r[0], dict(list(zip(list(ndict.ordered(w).keys()), r[1:])))
     
     # Gradient w.r.t. the Fisher divergence
     def dfd_dw(self, w, x, z, gz2):
         x, z = self.xz_to_theano(x, z)
         w, z, x, gz2 = ndict.ordereddicts((w, z, x, gz2))
         A = self.get_A(x)
-        r = self.f_dfd_dw(*(w.values() + x.values() + z.values() + [A] + gz2.values()))
-        logpx, logpz, fd, gw = r[0], r[1], r[2], dict(zip(w.keys(), r[3:3+len(w)]))
+        r = self.f_dfd_dw(*(list(w.values()) + list(x.values()) + list(z.values()) + [A] + list(gz2.values())))
+        logpx, logpz, fd, gw = r[0], r[1], r[2], dict(list(zip(list(w.keys()), r[3:3+len(w)])))
         
         if ndict.hasNaN(gw):
             if True:
-                print 'NaN detected in gradients'
+                print('NaN detected in gradients')
                 raise Exception()
                 for i in gw: gw[i][np.isnan(gw[i])] = 0
             else:
                 
-                print 'fd: ', fd
-                print 'Values:'
+                print('fd: ', fd)
+                print('Values:')
                 ndict.p(w)
                 ndict.p(z)
-                print 'Gradients:'
+                print('Gradients:')
                 ndict.p(gw)
                 raise Exception("dfd_dw(): NaN found in gradients")
         

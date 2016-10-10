@@ -66,7 +66,7 @@ class VAE_Z_X(ap.VAEModel):
         
         # function for distribution q(z|x)
         theanofunc = lazytheanofunc('warn', mode='FAST_RUN')
-        self.dist_qz['z'] = theanofunc([x['x']] + v.values() + [A], [q_mean, q_logvar])
+        self.dist_qz['z'] = theanofunc([x['x']] + list(v.values()) + [A], [q_mean, q_logvar])
         
         # Compute virtual sample
         _z = q_mean + T.exp(0.5 * q_logvar) * z['eps']
@@ -79,12 +79,12 @@ class VAE_Z_X(ap.VAEModel):
         if self.type_px == 'bernoulli':
             p = T.nnet.sigmoid(T.dot(w['out_w'], hidden_p[-1]) + T.dot(w['out_b'], A))
             _logpx = - T.nnet.binary_crossentropy(p, x['x'])
-            self.dist_px['x'] = theanofunc([_z] + w.values() + [A], p)
+            self.dist_px['x'] = theanofunc([_z] + list(w.values()) + [A], p)
         elif self.type_px == 'gaussian':
             x_mean = T.dot(w['out_w'], hidden_p[-1]) + T.dot(w['out_b'], A)
             x_logvar = T.dot(w['out_logvar_w'], hidden_p[-1]) + T.dot(w['out_logvar_b'], A)
             _logpx = ap.logpdfs.normal2(x['x'], x_mean, x_logvar)
-            self.dist_px['x'] = theanofunc([_z] + w.values() + [A], [x_mean, x_logvar])
+            self.dist_px['x'] = theanofunc([_z] + list(w.values()) + [A], [x_mean, x_logvar])
         elif self.type_px == 'bounded01':
             x_mean = T.nnet.sigmoid(T.dot(w['out_w'], hidden_p[-1]) + T.dot(w['out_b'], A))
             x_logvar = T.dot(w['out_logvar_b'], A)
@@ -92,7 +92,7 @@ class VAE_Z_X(ap.VAEModel):
             # Make it a mixture between uniform and Gaussian
             w_unif = T.nnet.sigmoid(T.dot(w['out_unif'], A))
             _logpx = T.log(w_unif + (1-w_unif) * T.exp(_logpx))
-            self.dist_px['x'] = theanofunc([_z] + w.values() + [A], [x_mean, x_logvar])
+            self.dist_px['x'] = theanofunc([_z] + list(w.values()) + [A], [x_mean, x_logvar])
         else: raise Exception("")
             
         # Note: logpx is a row vector (one element per sample)
@@ -166,19 +166,19 @@ class VAE_Z_X(ap.VAEModel):
         _z = {}
 
         # If x['x'] was given but not z['z']: generate z ~ q(z|x)
-        if x.has_key('x') and not z.has_key('z'):
+        if 'x' in x and 'z' not in z:
 
-            q_mean, q_logvar = self.dist_qz['z'](*([x['x']] + v.values() + [A]))
+            q_mean, q_logvar = self.dist_qz['z'](*([x['x']] + list(v.values()) + [A]))
             _z['mean'] = q_mean
             _z['logvar'] = q_logvar
             
             # Require epsilon
-            if not z.has_key('eps'):
+            if 'eps' not in z:
                 z['eps'] = self.gen_eps(n_batch)['eps']
             
             z['z'] = q_mean + np.exp(0.5 * q_logvar) * z['eps']
             
-        elif not z.has_key('z'):
+        elif 'z' not in z:
             if self.type_pz in ['gaussian','gaussianmarg']:
                 z['z'] = np.random.standard_normal(size=(self.n_z, n_batch))
             elif self.type_pz == 'laplace':
@@ -189,14 +189,14 @@ class VAE_Z_X(ap.VAEModel):
         # Generate from p(x|z)
         
         if self.type_px == 'bernoulli':
-            p = self.dist_px['x'](*([z['z']] + w.values() + [A]))
+            p = self.dist_px['x'](*([z['z']] + list(w.values()) + [A]))
             _z['x'] = p
-            if not x.has_key('x'):
+            if 'x' not in x:
                 x['x'] = np.random.binomial(n=1,p=p)
         elif self.type_px == 'bounded01' or self.type_px == 'gaussian':
-            x_mean, x_logvar = self.dist_px['x'](*([z['z']] + w.values() + [A]))
+            x_mean, x_logvar = self.dist_px['x'](*([z['z']] + list(w.values()) + [A]))
             _z['x'] = x_mean
-            if not x.has_key('x'):
+            if 'x' not in x:
                 x['x'] = np.random.normal(x_mean, np.exp(x_logvar/2))
                 if self.type_px == 'bounded01':
                     x['x'] = np.maximum(np.zeros(x['x'].shape), x['x'])

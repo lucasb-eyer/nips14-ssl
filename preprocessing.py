@@ -13,12 +13,12 @@ def PCA(x_in, cutoff=0.99, global_sd=True, toFloat=True):
         x_sd = x.std()
     x /= x_sd
     x_cov = x.dot(x.T) / x.shape[1]
-    print "Performing eigen-decomposition for PCA..."
+    print("Performing eigen-decomposition for PCA...")
     eigval, eigvec = np.linalg.eig(x_cov)
-    print "Done."
+    print("Done.")
     if cutoff <= 1:
         n_used = ((eigval.cumsum() / eigval.sum()) < cutoff).sum()
-        print 'PCA cutoff:', cutoff, 'n_used:', n_used
+        print('PCA cutoff:', cutoff, 'n_used:', n_used)
     else:
         n_used = cutoff
     eigval = eigval[:n_used].reshape((-1,1))

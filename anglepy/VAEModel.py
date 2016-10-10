@@ -29,7 +29,7 @@ class VAEModel(object):
         self.var_A = A
         
         # Get gradient symbols
-        allvars = v.values() + w.values() + x.values() + z.values() + [A] # note: '+' concatenates lists
+        allvars = list(v.values()) + list(w.values()) + list(x.values()) + list(z.values()) + [A] # note: '+' concatenates lists
         
         # TODO: more beautiful/standardized way of setting distributions
         # (should be even simpler than this) 
@@ -42,17 +42,17 @@ class VAEModel(object):
         # Log-likelihood lower bound
         self.f_L = theanofunction(allvars, [logpx, logpz, logqz])
         L = (logpx + logpz - logqz).sum()
-        dL_dw = T.grad(L, v.values() + w.values())
+        dL_dw = T.grad(L, list(v.values()) + list(w.values()))
         self.f_dL_dw = theanofunction(allvars, [logpx, logpz, logqz] + dL_dw)
         
         weights = T.dmatrix()
-        dL_weighted_dw = T.grad((weights * (logpx + logpz - logqz)).sum(), v.values() + w.values())
+        dL_weighted_dw = T.grad((weights * (logpx + logpz - logqz)).sum(), list(v.values()) + list(w.values()))
         self.f_dL_weighted_dw = theanofunction(allvars + [weights], [logpx + logpz - logqz, weights*(logpx + logpz - logqz)] + dL_weighted_dw)
         
         # prior
-        dlogpw_dw = T.grad(logpv + logpw, v.values() + w.values(), disconnected_inputs='ignore')
-        self.f_logpw = theanofunction(v.values() + w.values(), [logpv, logpw])
-        self.f_dlogpw_dw = theanofunction(v.values() + w.values(), [logpv, logpw] + dlogpw_dw)
+        dlogpw_dw = T.grad(logpv + logpw, list(v.values()) + list(w.values()), disconnected_inputs='ignore')
+        self.f_logpw = theanofunction(list(v.values()) + list(w.values()), [logpv, logpw])
+        self.f_dlogpw_dw = theanofunction(list(v.values()) + list(w.values()), [logpv, logpw] + dlogpw_dw)
         
         # distributions
         #self.f_dists = {}
@@ -74,7 +74,7 @@ class VAEModel(object):
         x, z = self.xz_to_theano(x, z)
         v, w, x, z = ndict.ordereddicts((v, w, x, z))
         A = self.get_A(x)
-        allvars = v.values() + w.values() + x.values() + z.values() + [A]
+        allvars = list(v.values()) + list(w.values()) + list(x.values()) + list(z.values()) + [A]
         return self.f_dists[name](*allvars)
     
     # Numpy <-> Theano var conversion
@@ -82,19 +82,19 @@ class VAEModel(object):
     def gw_to_numpy(self, gv, gw): return gv, gw
     
     # A = np.ones((1, n_batch))
-    def get_A(self, x): return np.ones((1, x.itervalues().next().shape[1]))
+    def get_A(self, x): return np.ones((1, iter(x.values()).next().shape[1]))
         
     # Likelihood: logp(x,z|w)
     def L(self, v, w, x, z):
         x, z = self.xz_to_theano(x, z)
         v, w, z, x = ndict.ordereddicts((v, w, z, x))
         A = self.get_A(x)
-        allvars = v.values() + w.values() + x.values() + z.values() + [A]
+        allvars = list(v.values()) + list(w.values()) + list(x.values()) + list(z.values()) + [A]
         logpx, logpz, logqz = self.f_L(*allvars)
         
         if np.isnan(logpx).any() or np.isnan(logpz).any() or np.isnan(logqz).any():
-            print 'logp: ', logpx, logpz, logqz
-            print 'Values:'
+            print('logp: ', logpx, logpz, logqz)
+            print('Values:')
             ndict.p(v)
             ndict.p(w)
             ndict.p(x)
@@ -111,13 +111,13 @@ class VAEModel(object):
                 #print 'logpx: ', logpx
                 #print 'logpz: ', logpz
                 #print 'logqz: ', logqz
-                print 'v:'
+                print('v:')
                 ndict.p(v)
-                print 'w:'
+                print('w:')
                 ndict.p(w)
-                print 'gv:'
+                print('gv:')
                 ndict.p(gv)
-                print 'gw:'
+                print('gw:')
                 ndict.p(gw)
                 raise Exception("dL_dw(): NaN found in gradients")
         
@@ -126,9 +126,9 @@ class VAEModel(object):
         x, z = self.xz_to_theano(x, z)
         v, w, z, x = ndict.ordereddicts((v, w, z, x))
         A = self.get_A(x)
-        allvars = v.values() + w.values() + x.values() + z.values() + [A]
+        allvars = list(v.values()) + list(w.values()) + list(x.values()) + list(z.values()) + [A]
         r = self.f_dL_dw(*allvars)
-        logpx, logpz, logqz, gv, gw = r[0], r[1], r[2], dict(zip(v.keys(), r[3:3+len(v)])), dict(zip(w.keys(), r[3+len(v):3+len(v)+len(w)]))
+        logpx, logpz, logqz, gv, gw = r[0], r[1], r[2], dict(list(zip(list(v.keys()), r[3:3+len(v)]))), dict(list(zip(list(w.keys()), r[3+len(v):3+len(v)+len(w)])))
         self.checknan(v, w, gv, gw)        
         gv, gw = self.gw_to_numpy(gv, gw)
         return logpx, logpz, logqz, gv, gw
@@ -138,9 +138,9 @@ class VAEModel(object):
         x, z = self.xz_to_theano(x, z)
         v, w, z, x = ndict.ordereddicts((v, w, z, x))
         A = self.get_A(x)
-        allvars = v.values() + w.values() + x.values() + z.values() + [A]
+        allvars = list(v.values()) + list(w.values()) + list(x.values()) + list(z.values()) + [A]
         r = self.f_dL_weighted_dw(*(allvars+[weights]))
-        L_unweighted, L_weighted, gv, gw = r[0], r[1], dict(zip(v.keys(), r[2:2+len(v)])), dict(zip(w.keys(), r[2+len(v):2+len(v)+len(w)]))
+        L_unweighted, L_weighted, gv, gw = r[0], r[1], dict(list(zip(list(v.keys()), r[2:2+len(v)]))), dict(list(zip(list(w.keys()), r[2+len(v):2+len(v)+len(w)])))
         self.checknan(v, w, gv, gw)
         gv, gw = self.gw_to_numpy(gv, gw)
         return L_unweighted, L_weighted, gv, gw
@@ -154,7 +154,7 @@ class VAEModel(object):
     def dlogpw_dw(self, v, w):
         r = self.f_dlogpw_dw(*ndict.orderedvals((v,w)))
         v, w = ndict.ordereddicts((v, w))
-        return r[0], r[1], dict(zip(v.keys(), r[2:2+len(v)])), dict(zip(w.keys(), r[2+len(v):2+len(v)+len(w)]))
+        return r[0], r[1], dict(list(zip(list(v.keys()), r[2:2+len(v)]))), dict(list(zip(list(w.keys()), r[2+len(v):2+len(v)+len(w)])))
     
     # Helper function that creates tiled version of datapoint 'x' (* n_batch)
     def tiled_x(self, x, n_batch):

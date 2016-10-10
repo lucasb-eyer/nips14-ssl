@@ -95,7 +95,7 @@ else:
     idxs = idxs[:n_batch_w*n_samples].reshape((n_batch_w,-1))
         
 # Test model
-print "Test model"
+print("Test model")
 z = np.random.standard_normal((n_z, n_batch_w))
 zsmooth = z.copy()
 smoothingfactor = 0.1
@@ -123,7 +123,7 @@ for sample in range(idxs.shape[1]):
     
     image = paramgraphics.mat_to_img(human_x, dim_input, colorImg=colorImg, tile_shape=tile_shape1)
     fname = logdir+'/'+str(sample)+'_human.png'
-    print 'Saving to '+fname
+    print('Saving to '+fname)
     image.save(fname, 'PNG')
     
     # Infer corresponding 'z'
@@ -148,7 +148,7 @@ for sample in range(idxs.shape[1]):
     
     image = paramgraphics.mat_to_img(x_samples, dim_input, colorImg=colorImg, tile_shape=tile_shape2)
     fname = logdir+'/'+str(sample)+'_machine.png'
-    print 'Saving to '+fname
+    print('Saving to '+fname)
     image.save(fname, 'PNG')
     
     if False:

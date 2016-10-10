@@ -78,7 +78,7 @@ if dataset == 'mnist':
 
 
 # Test model
-print "Test model"
+print("Test model")
 z = np.random.standard_normal((n_z, n_batch_w))
 zsmooth = z.copy()
 smoothingfactor = 0.1
@@ -127,11 +127,11 @@ for i in range(2000):
         image = image.resize((width, height))
         # Save it
         fname = logdir+'/'+str(i)+'.png'
-        print 'Saving to '+fname
+        print('Saving to '+fname)
         image.save(fname, 'PNG')
         
 import os
 os.system("ffmpeg -start_number 0 -i "+logdir+"/%d.png -c:v libx264 -pix_fmt yuv420p -r 30 "+target_fname)
-print "Saved to "+target_fname
-print "Done."
+print("Saved to "+target_fname)
+print("Done.")
 

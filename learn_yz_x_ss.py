@@ -25,9 +25,9 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
     import time
     logdir = 'results/learn_yz_x_ss_'+dataset+'_'+str(n_z)+'-'+str(n_hidden)+'_nlabeled'+str(n_labeled)+'_alpha'+str(alpha)+'_seed'+str(seed)+'_'+comment+'-'+str(int(time.time()))+'/'
     if not os.path.exists(logdir): os.makedirs(logdir)
-    print 'logdir:', logdir
+    print('logdir:', logdir)
     
-    print sys.argv[0], n_labeled, n_z, n_hidden, dataset, seed, comment
+    print(sys.argv[0], n_labeled, n_z, n_hidden, dataset, seed, comment)
     
     np.random.seed(seed)
     
@@ -57,7 +57,7 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
         
         # 1. Determine which dimensions to keep
         def transform(v, _x):
-            return l1_model.dist_qz['z'](*([_x] + v.values() + [np.ones((1, _x.shape[1]))]))
+            return l1_model.dist_qz['z'](*([_x] + list(v.values()) + [np.ones((1, _x.shape[1]))]))
         q_mean, _ = transform(l1_v, x_u[0:1000])
         idx_keep = np.std(q_mean, axis=1) > 0.1
         
@@ -114,7 +114,7 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
         
         # 1. Determine which dimensions to keep
         def transform(v, _x):
-            return l1_model.dist_qz['z'](*([f_enc(_x)] + v.values() + [np.ones((1, _x.shape[1]))]))
+            return l1_model.dist_qz['z'](*([f_enc(_x)] + list(v.values()) + [np.ones((1, _x.shape[1]))]))
         
         # 2. We're keeping all latent dimensions
         
@@ -173,9 +173,9 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
     
         dt = time.time() - t0
         
-        print dt, t, ll, valid_error, test_error
+        print(dt, t, ll, valid_error, test_error)
         with open(logdir+'hook.txt', 'a') as f:
-            print >>f, dt, t, ll, valid_error, test_error
+            print(dt, t, ll, valid_error, test_error, file=f)
         
         return valid_error
 
@@ -193,11 +193,11 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
     # create minibatches
     minibatches = []
 
-    n_labeled = x_labeled.itervalues().next().shape[1]
+    n_labeled = iter(x_labeled.values()).next().shape[1]
     n_batch_l = n_labeled / n_minibatches
     if (n_labeled%n_batch_l) != 0: raise Exception()
     
-    n_unlabeled = x_unlabeled.itervalues().next().shape[1]
+    n_unlabeled = iter(x_unlabeled.values()).next().shape[1]
     n_batch_u = n_unlabeled / n_minibatches
     if (n_unlabeled%n_batch_u) != 0: raise Exception()
     
@@ -215,8 +215,8 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
     # For integrating-out approach
     L_inner = T.dmatrix()
     L_unlabeled = T.dot(np.ones((1, n_y)), model_qy.p * (L_inner - T.log(model_qy.p)))
-    grad_L_unlabeled = T.grad(L_unlabeled.sum(), model_qy.var_w.values())
-    f_du =  theano.function([model_qy.var_x['x']] + model_qy.var_w.values() + [model_qy.var_A, L_inner], [L_unlabeled] + grad_L_unlabeled)
+    grad_L_unlabeled = T.grad(L_unlabeled.sum(), list(model_qy.var_w.values()))
+    f_du =  theano.function([model_qy.var_x['x']] + list(model_qy.var_w.values()) + [model_qy.var_A, L_inner], [L_unlabeled] + grad_L_unlabeled)
     
     # Some statistics
     L = [0.]
@@ -255,7 +255,7 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
         # -KL(q(z|x,y)q(y|x) ~p(x) || p(x,y,z))
         # Approach where outer expectation (over q(z|x,y)) is taken as explicit sum (instead of sampling)
         u = ndict.ordered(u)
-        py = model_qy.dist_px['y'](*([x_minibatch_u['x']] + u.values() + [np.ones((1, n_batch_u))]))
+        py = model_qy.dist_px['y'](*([x_minibatch_u['x']] + list(u.values()) + [np.ones((1, n_batch_u))]))
         
         if True:
             # Original
@@ -281,9 +281,9 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
             L_unweighted, L_weighted, gv_unlabeled, gw_unlabeled = model.dL_weighted_dw(v, w, {'x':_x,'y':_y}, eps, py.reshape((1, -1)))
             _L = L_unweighted.reshape((n_y, n_batch_u))
         
-        r = f_du(*([x_minibatch_u['x']] + u.values() + [np.zeros((1, n_batch_u)), _L]))
+        r = f_du(*([x_minibatch_u['x']] + list(u.values()) + [np.zeros((1, n_batch_u)), _L]))
         L_unlabeled = r[0]
-        gu_unlabeled = dict(zip(u.keys(), r[1:]))
+        gu_unlabeled = dict(list(zip(list(u.keys()), r[1:])))
         
         # Get gradient of prior
         logpu, gu_prior = model_qy.dlogpw_dw(u)

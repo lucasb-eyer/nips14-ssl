@@ -144,13 +144,13 @@ def setShapes(d, shapes):
     return result
 
 def p(d):
-    for i in d: print i+'\n', d[i]
+    for i in d: print(i+'\n', d[i])
 
 def pNorm(d):
-    for i in d: print i, numpy.linalg.norm(d[i])
+    for i in d: print(i, numpy.linalg.norm(d[i]))
 
 def pShape(d):
-    for i in d: print i, d[i].shape
+    for i in d: print(i, d[i].shape)
 
 def hasNaN(d):
     result = False
@@ -178,13 +178,13 @@ def ordereddicts(ds):
 def orderedvals(ds):
     vals = []
     for d in ds:
-        vals += ordered(d).values()
+        vals += list(ordered(d).values())
     return vals
 
 # Shuffle all elements of ndict
 # Assumes that each element of dict has some number of columns!
 def shuffleCols(d):
-    n_cols = d.itervalues().next().shape[1]
+    n_cols = iter(d.values()).next().shape[1]
     idx = np.arange(n_cols)
     np.random.shuffle(idx)
     for i in d:
@@ -200,10 +200,10 @@ def savez(d, filename, addext=True):
     fname2 = 'names.txt'
     _d = ordered(d)
     # Write values (arrays)
-    np.savez(filename+'.'+fname1, *_d.values())
+    np.savez(filename+'.'+fname1, *list(_d.values()))
     # Write keys (names of arrays)
     with open(filename+'.'+fname2, 'w') as thefile:
-        for key in _d.keys(): thefile.write("%s\n" % key)
+        for key in list(_d.keys()): thefile.write("%s\n" % key)
     # Write TAR file
     tar = tarfile.open(filename, "w:gz")
     for fname in [fname1, fname2]:

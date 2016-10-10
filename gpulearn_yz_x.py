@@ -21,14 +21,14 @@ def main(n_z, n_hidden, dataset, seed, gfx=True, _size=None):
     '''
     assert (type(n_hidden) == tuple or type(n_hidden) == list)
     assert type(n_z) == int
-    assert isinstance(dataset, basestring)
+    assert isinstance(dataset, str)
     
-    print 'gpulearn_yz_x', n_z, n_hidden, dataset, seed
+    print('gpulearn_yz_x', n_z, n_hidden, dataset, seed)
     
     import time
     logdir = 'results/gpulearn_yz_x_'+dataset+'_'+str(n_z)+'-'+str(n_hidden)+'-'+str(int(time.time()))+'/'
     if not os.path.exists(logdir): os.makedirs(logdir)
-    print 'logdir:', logdir
+    print('logdir:', logdir)
     
     np.random.seed(seed)
     
@@ -183,7 +183,7 @@ def main(n_z, n_hidden, dataset, seed, gfx=True, _size=None):
         ll_valid, _ = model.est_loglik(x_valid, n_samples=L_valid, n_batch=n_batch, byteToFloat=byteToFloat)
             
         if math.isnan(ll_valid):
-            print "NaN detected. Reverting to saved best parameters"
+            print("NaN detected. Reverting to saved best parameters")
             ndict.set_value(model.v, ndict.loadz(logdir+'v.ndict.tar.gz'))
             ndict.set_value(model.w, ndict.loadz(logdir+'w.ndict.tar.gz'))
             return
@@ -197,17 +197,17 @@ def main(n_z, n_hidden, dataset, seed, gfx=True, _size=None):
             ll_valid_stats[1] += 1
             # Stop when not improving validation set performance in 100 iterations
             if False and ll_valid_stats[1] > 1000:
-                print "Finished"
+                print("Finished")
                 with open(logdir+'hook.txt', 'a') as f:
-                    print >>f, "Finished"
+                    print("Finished", file=f)
                 exit()
 
         # Log
         ndict.savez(ndict.get_value(model.v), logdir+'v')
         ndict.savez(ndict.get_value(model.w), logdir+'w')
-        print epoch, t, ll, ll_valid
+        print(epoch, t, ll, ll_valid)
         with open(logdir+'hook.txt', 'a') as f:
-            print >>f, t, ll, ll_valid
+            print(t, ll, ll_valid, file=f)
         
         if gfx:   
             # Graphics
@@ -285,21 +285,21 @@ def main(n_z, n_hidden, dataset, seed, gfx=True, _size=None):
 def loop_va(doEpoch, hook, n_epochs=9999999):
     import time
     t0 = time.time()
-    for t in xrange(1, n_epochs):
+    for t in range(1, n_epochs):
         L = doEpoch()
         hook(t, time.time() - t0, L)
         
-    print 'Optimization loop finished'
+    print('Optimization loop finished')
 
 # Learning step for variational auto-encoder
 def epoch_vae_adam(model, x, n_batch=100, convertImgs=False, bernoulli_x=False, byteToFloat=False):
-    print 'Variational Auto-Encoder', n_batch
+    print('Variational Auto-Encoder', n_batch)
     
     def doEpoch():
         
         from collections import OrderedDict
 
-        n_tot = x.itervalues().next().shape[1]
+        n_tot = iter(x.values()).next().shape[1]
         idx_from = 0
         L = 0
         while idx_from < n_tot:
@@ -321,7 +321,7 @@ def epoch_vae_adam(model, x, n_batch=100, convertImgs=False, bernoulli_x=False, 
     return doEpoch
 
 def get_adam_optimizer(alpha=3e-4, beta1=0.9, beta2=0.999, weight_decay=0.0):
-    print 'AdaM', alpha, beta1, beta2, weight_decay
+    print('AdaM', alpha, beta1, beta2, weight_decay)
     def shared32(x, name=None, borrow=False):
         return theano.shared(np.asarray(x, dtype='float32'), name=name, borrow=borrow)
 
