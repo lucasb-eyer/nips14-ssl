@@ -13,7 +13,7 @@ paths = {
 
 def load_theano(size=28):
     f = gzip.open(paths[size], 'rb')
-    train, valid, test = pickle.load(f)
+    train, valid, test = pickle.load(f, encoding='latin1')
     f.close()
     def shared_dataset(data_xy, borrow=True):
         data_x, data_y = data_xy
@@ -28,7 +28,7 @@ def load_theano(size=28):
 def load_numpy(size=28, binarize_y=False):
     # MNIST dataset
     f = gzip.open(paths[size], 'rb')
-    train, valid, test = pickle.load(f)
+    train, valid, test = pickle.load(f, encoding='latin1')
     f.close()
     train_x, train_y = train
     valid_x, valid_y = valid
@@ -89,13 +89,13 @@ def save_reshaped(shape):
 
     # MNIST dataset
     f = gzip.open(paths[28], 'rb')
-    train, valid, test = pickle.load(f)
+    train, valid, test = pickle.load(f, encoding='latin1')
     train = reshape_digits(train[0], shape), train[1]
     valid = reshape_digits(valid[0], shape), valid[1]
     test = reshape_digits(test[0], shape), test[1]
     f.close()
     f = gzip.open(os.path.dirname(__file__)+'/mnist_'+str(shape[0])+'_.pkl.gz','wb')
-    pickle.dump((train, valid, test), f)
+    pickle.dump((train, valid, test), f, encoding='latin1')
     f.close()
     
 def make_random_projection(shape):

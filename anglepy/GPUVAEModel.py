@@ -90,7 +90,7 @@ class GPUVAEModel(object):
     def gw_to_numpy(self, gv, gw): return gv, gw
     
     # A = np.ones((1, n_batch))
-    def get_A(self, x): return np.ones((1, iter(x.values()).next().shape[1])).astype('float32')
+    def get_A(self, x): return np.ones((1, next(iter(x.values())).shape[1])).astype('float32')
 
     # Evaluate lower bound
     def eval(self, x, z):
@@ -114,7 +114,7 @@ class GPUVAEModel(object):
     # L is number of samples
     def est_loglik(self, x, n_batch, n_samples=1, byteToFloat=False):
         
-        n_tot = iter(x.values()).next().shape[1]
+        n_tot = next(iter(x.values())).shape[1]
         
         px = 0 # estimate of marginal likelihood
         lowbound = 0 # estimate of lower bound of marginal likelihood

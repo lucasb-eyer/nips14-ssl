@@ -5,7 +5,6 @@ import scipy.stats
 import anglepy.paramgraphics as paramgraphics
 import anglepy.ndict as ndict
 import matplotlib.pyplot as plt
-import Image
 import math
 
 import theano
@@ -234,6 +233,7 @@ def main(n_z, n_hidden, dataset, seed, gfx=True, _size=None):
             
             if n_z == 2:
                 
+                import Image
                 import ImageFont
                 import ImageDraw
                 
@@ -299,7 +299,7 @@ def epoch_vae_adam(model, x, n_batch=100, convertImgs=False, bernoulli_x=False, 
         
         from collections import OrderedDict
 
-        n_tot = iter(x.values()).next().shape[1]
+        n_tot = next(iter(x.values())).shape[1]
         idx_from = 0
         L = 0
         while idx_from < n_tot:

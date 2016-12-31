@@ -217,7 +217,7 @@ def loadz(filename):
         members = tar.getmembers()
         arrays = np.load(tar.extractfile(members[0]))
         names = tar.extractfile(members[1]).readlines()
-        result = {names[i][:-1]: arrays['arr_'+str(i)] for i in range(len(names))}
+        result = {names[i].decode('utf-8')[:-1]: arrays['arr_'+str(i)] for i in range(len(names))}
     return ordered(result)
     
 
