@@ -131,7 +131,7 @@ for i in range(2000):
         image.save(fname, 'PNG')
         
 import os
-os.system("ffmpeg -start_number 0 -i "+logdir+"/%d.png -c:v libx264 -pix_fmt yuv420p -r 30 "+target_fname)
+os.system("avconv -i "+logdir+"/%d.png -c:v libx264 -pix_fmt yuv420p -r 30 "+target_fname)
 print("Saved to "+target_fname)
 print("Done.")
 
