@@ -1,13 +1,9 @@
 import sys
 
-import math, os, time, scipy.stats, numpy as np, pylab, Image, PIL.Image
+import os, time, numpy as np
 import matplotlib.pyplot as plt, matplotlib.cm as cm
-import numpy.random
-import theano, theano.tensor as T
-import anglepy as ap
-import anglepy.models as apmodels
 import anglepy.ndict as ndict
-import anglepy.paramgraphics as paramgraphics
+from anglepy.paramgraphics import mat_to_img
 
 dataset = sys.argv[1] #e.g. mnist
 draw_rows = bool(sys.argv[2]) # e.g. 1 (True)
@@ -112,14 +108,14 @@ for i in range(2000):
     x_samples = f_dec(_z_confab['x'])
     
     if False:
-        image = paramgraphics.mat_to_img(x_samples, dim_input, colorImg=colorImg, tile_shape=tile_shape)
+        image = mat_to_img(x_samples, dim_input, colorImg=colorImg, tile_shape=tile_shape)
         plt.clf()
-        plt.imshow(image, cmap=pylab.gray(), origin='upper')
+        plt.imshow(image, cmap=cm.gray, origin='upper')
         plt.show()
         plt.draw()
     else:
         if not os.path.exists(logdir): os.makedirs(logdir)
-        image = paramgraphics.mat_to_img(x_samples, dim_input, colorImg=colorImg, tile_shape=tile_shape)
+        image = mat_to_img(x_samples, dim_input, colorImg=colorImg, tile_shape=tile_shape)
         # Make sure the nr of rows and cols are even
         width, height = image.size
         if width%2==1: width += 1
