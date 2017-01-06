@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import PIL.Image
-import pylab
 
 def save_images(images, directory, filename):
     if not os.path.exists(directory):
@@ -59,7 +58,7 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
     X = X * 1.0 # converts ints to floats
     
     if colorImg:
-        channelSize = X.shape[1]/3
+        channelSize = X.shape[1]//3
         X = (X[:,0:channelSize], X[:,channelSize:2*channelSize], X[:,2*channelSize:3*channelSize], None)
     
     assert len(img_shape) == 2
@@ -149,6 +148,7 @@ def mat_to_img(w, dim_input, scale=False, colorImg=False, tile_spacing=(1,1), ti
 
 # Show filters
 def imgshow(plt, w, dim_input, scale=False, colorImg=False, convertImgs=False, tile_spacing=(1,1)):
+    import pylab
     if convertImgs:
         channelSize = w.shape[0]/3
         w = tuple([w[channelSize*i:channelSize*(i+1)] for i in range(3)])
